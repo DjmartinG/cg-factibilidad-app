@@ -4,7 +4,7 @@
 **Proyecto:** Argos (CVP/RenoBo) · slug `4_argos_cvp_REAL` · VIS · prefactibilidad
 **Fuente:** Excel `26072026 PREFACTIBILIDAD PREDIO ARGOS 20 pisos1420_Conaltura.xlsx`
 **Alcance:** mueve cifras de **UN** proyecto (Argos). **Dorado de Navarra/Dominica/Torres INTACTO** (verificado, 28 tests verdes).
-**Estado:** ⚠️ **NO APROBADA.** Requiere el OK explícito de Martín ANTES de `--apply`.
+**Estado:** ✅ **APROBADA por Martín y APLICADA** (2026-07-27). `scenarios v5 approved` en prod (sid `3f0a6345`; verificado por SKIP idempotente). La advertencia del flujo se surfacea **en la plataforma** (banner de la ficha), NO por correo — decisión de Martín: las alertas a responsables viven en la app, antes de enviar un correo.
 
 ---
 
