@@ -1,0 +1,20 @@
+{
+  "_nota": "MUESTRA SINTETICA (no son datos reales de SINCO). Sirve para ejercitar el pipeline ETL completo (to_actuals -> upsert_actuals) sin credenciales ni red. Los nombres de columna y el 'mapeo' son ILUSTRATIVOS; en el Paso 2 se reemplazan por las columnas reales de ADP_DTM_VFACT.ControlProyecto (las imprime el smoke: python -m aleph_api.conectores.sinco).",
+  "mapeo": {
+    "proyecto": "proyecto_cod",
+    "nivel": "capitulo",
+    "periodo": "mes",
+    "pv": "valor_planeado",
+    "ev": "valor_ganado",
+    "ac": "costo_real",
+    "bac": "presupuesto_total",
+    "corte": "fecha_corte"
+  },
+  "filas": [
+    {"proyecto_cod": "navarra", "capitulo": "Cimentacion", "mes": "2026-01-01", "valor_planeado": 100, "valor_ganado": 90, "costo_real": 95, "presupuesto_total": 500, "fecha_corte": "2026-01-31"},
+    {"proyecto_cod": "navarra", "capitulo": "Cimentacion", "mes": "2026-01-20", "valor_planeado": 50, "valor_ganado": 40, "costo_real": 45, "presupuesto_total": 250, "fecha_corte": "2026-01-31"},
+    {"proyecto_cod": "navarra", "capitulo": "Estructura", "mes": "2026-01-01", "valor_planeado": 200, "valor_ganado": 180, "costo_real": 210, "presupuesto_total": 800, "fecha_corte": "2026-01-31"},
+    {"proyecto_cod": "navarra", "capitulo": "Estructura", "mes": "2026-02-01", "valor_planeado": 150, "valor_ganado": 140, "costo_real": 145, "presupuesto_total": 800, "fecha_corte": "2026-02-28"},
+    {"proyecto_cod": "dominica", "capitulo": "Cimentacion", "mes": "2026-01-01", "valor_planeado": 70, "valor_ganado": 60, "costo_real": 65, "presupuesto_total": 300, "fecha_corte": "2026-01-31"}
+  ]
+}
