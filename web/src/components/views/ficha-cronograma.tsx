@@ -45,9 +45,13 @@ export function CronogramaView({ schedule }: { schedule: Schedule }) {
         title="Cronograma por etapa"
         legend={
           <>
-            <Swatch color="var(--primary)" label="Ventas (IV→FV)" />
+            <Swatch color="var(--primary)" label="Comercialización" />
+            <DottedSw label="Cuotas iniciales" />
             <Ring label="Equilibrio" />
-            <Swatch color="var(--cg-amber)" label="Construcción (IC→FC)" />
+            <Swatch color="var(--cg-amber)" label="Construcción" />
+            <Diamond label="Escrituración" />
+            <Triangle label="Entrega" />
+            <HoySw label="Hoy" />
           </>
         }
       >
@@ -141,6 +145,42 @@ function Ring({ label }: { label: string }) {
   return (
     <span className="flex items-center gap-1.5">
       <span className="size-2.5 rounded-full border-[1.5px] border-primary bg-card" />
+      {label}
+    </span>
+  );
+}
+
+function DottedSw({ label }: { label: string }) {
+  return (
+    <span className="flex items-center gap-1.5">
+      <span className="h-0 w-3 border-t-2 border-dotted border-primary/40" />
+      {label}
+    </span>
+  );
+}
+
+function Diamond({ label }: { label: string }) {
+  return (
+    <span className="flex items-center gap-1.5">
+      <span className="size-2 rotate-45 bg-cg-amber" />
+      {label}
+    </span>
+  );
+}
+
+function Triangle({ label }: { label: string }) {
+  return (
+    <span className="flex items-center gap-1.5">
+      <span style={{ width: 0, height: 0, borderLeft: "4px solid transparent", borderRight: "4px solid transparent", borderBottom: "7px solid var(--primary)" }} />
+      {label}
+    </span>
+  );
+}
+
+function HoySw({ label }: { label: string }) {
+  return (
+    <span className="flex items-center gap-1.5">
+      <span className="h-3 w-0 border-l-[1.5px] border-dashed" style={{ borderColor: "var(--gantt-hoy)" }} />
       {label}
     </span>
   );

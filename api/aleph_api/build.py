@@ -162,15 +162,24 @@ def schedule(slug: str, par: dict, R: dict) -> dict:
         return vacio   # proyecto sin etapas datadas (p.ej. greenfield): la UI muestra "sin cronograma"
 
     base = min(h["IV"] for h in hitos.values())
+    # Offsets de escrituración / entrega por etapa (fases del Gantt que no viven en los hitos IV/PE/FV/IC/FC).
+    _off = {e.get("cod", i + 1): (e.get("escrituracion"), e.get("entrega"))
+            for i, e in enumerate(par.get("etapas", []))}
     etapas = []
     for cod, h in sorted(hitos.items(), key=lambda kv: (kv[1]["IV"], str(kv[0]))):
+        iv_mes = _mes_offset(h["IV"], base)
+        esc_off, ent_off = _off.get(cod, (None, None))
+        esc_mes = iv_mes + esc_off if esc_off is not None else None
+        ent_mes = iv_mes + ent_off if ent_off is not None else None
         etapas.append({
             "cod": cod, "nombre": h.get("nombre"), "unidades": h.get("unidades", 0),
             "iv": _iso(h["IV"]), "pe": _iso(h["PE"]), "fv": _iso(h["FV"]),
             "ic": _iso(h["IC"]), "fc": _iso(h["FC"]), "dur_obra": h.get("dur_obra"),
-            "iv_mes": _mes_offset(h["IV"], base), "pe_mes": _mes_offset(h["PE"], base),
+            "iv_mes": iv_mes, "pe_mes": _mes_offset(h["PE"], base),
             "fv_mes": _mes_offset(h["FV"], base), "ic_mes": _mes_offset(h["IC"], base),
             "fc_mes": _mes_offset(h["FC"], base),
+            # escrituración, entrega y fin de cuotas iniciales (= hasta escrituración) — meses desde base
+            "esc_mes": esc_mes, "ent_mes": ent_mes, "cuo_fin_mes": esc_mes,
         })
 
     sep = list(recaudo.get("separacion", [])); ci = list(recaudo.get("cuota_inicial", []))
