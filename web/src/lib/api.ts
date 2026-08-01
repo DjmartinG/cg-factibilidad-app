@@ -548,6 +548,8 @@ export interface ScheduleEtapa {
   iv: string; pe: string; fv: string; ic: string; fc: string;
   dur_obra: number | null;
   iv_mes: number; pe_mes: number; fv_mes: number; ic_mes: number; fc_mes: number;
+  /** Fases extra (meses desde base): escrituración, entrega y fin de cuotas iniciales. null si el API no las expone. */
+  esc_mes?: number | null; ent_mes?: number | null; cuo_fin_mes?: number | null;
 }
 
 export interface Schedule {
