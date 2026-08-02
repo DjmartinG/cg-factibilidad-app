@@ -108,3 +108,46 @@ def test_endpoint_fuentes_live():
     assert j["datos"]["rp"]["valor"] == 0.0285
     assert j["trm"]["disponible"] is True and j["trm"]["valor"] == 3433.71
     fuentes_live._cache.clear()
+
+
+# ---------- Abanico macro (escenarios forward) ----------
+
+def _seed_banrep(trm=None, ibr=None):
+    """Siembra los cachés de TRM/IBR del día → el abanico no le pega a la red en CI."""
+    fuentes_live._cache.clear()
+    fuentes_live._cache[f"trm:{fuentes_live._hoy()}"] = trm or {
+        "disponible": False, "fuente": "Banco de la República", "url": fuentes_live.URL_TRM}
+    fuentes_live._cache[f"ibr:{fuentes_live._hoy()}"] = ibr or {
+        "disponible": False, "fuente": "Banco de la República", "url": fuentes_live.URL_IBR}
+
+
+def test_abanico_ancla_a_datos_vivos():
+    _seed_banrep(
+        trm={"disponible": True, "valor": 4250.0, "unidad": "COP", "fuente": "Banrep", "url": fuentes_live.URL_TRM},
+        ibr={"disponible": True, "valor": 9.0, "unidad": "pct_ea", "fuente": "Banrep", "url": fuentes_live.URL_IBR},
+    )
+    r = fuentes_live.abanico_macro(anio=2026)
+    trm = next(v for v in r["variables"] if v["clave"] == "trm")
+    tasa = next(v for v in r["variables"] if v["clave"] == "tasa")
+    assert trm["puntos"][0]["base"] == 4250.0 and trm["anclado"] is True
+    assert abs(tasa["puntos"][0]["base"] - 0.09) < 1e-9 and tasa["anclado"] is True  # 9,0% → 0,09
+    assert r["anclas_vivas"]["trm"]["disponible"] is True
+    fuentes_live._cache.clear()
+
+
+def test_abanico_degrada_a_defaults_sin_red():
+    _seed_banrep()  # ambas fuentes no disponibles
+    r = fuentes_live.abanico_macro(anio=2026)
+    assert all(not v["anclado"] for v in r["variables"])  # sin ancla viva → default grounded
+    infl = next(v for v in r["variables"] if v["clave"] == "inflacion")
+    assert abs(infl["puntos"][0]["base"] - 0.051) < 1e-9
+    fuentes_live._cache.clear()
+
+
+def test_endpoint_fuentes_forward():
+    _seed_banrep()
+    j = client.get("/v1/fuentes/forward").json()
+    assert {v["clave"] for v in j["variables"]} == {"inflacion", "tasa", "trm"}
+    assert j["anio_inicio"] >= 2026
+    assert all(len(v["puntos"]) == j["horizonte"] + 1 for v in j["variables"])
+    fuentes_live._cache.clear()

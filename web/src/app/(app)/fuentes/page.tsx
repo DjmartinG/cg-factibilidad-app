@@ -1,9 +1,10 @@
 import { unstable_rethrow } from "next/navigation";
 import { ExternalLink } from "lucide-react";
-import { getPortfolio, getWacc, getFuentesLive, type Wacc, type FuentesLive } from "@/lib/api";
+import { getPortfolio, getWacc, getFuentesLive, getFuentesForward, type Wacc, type FuentesLive, type MacroForward } from "@/lib/api";
 import { fmtPct } from "@/lib/format";
 import { FUENTES, MERCADO_TRM } from "@/lib/fuentes";
 import { SourceNote } from "@/components/source-note";
+import { EscenariosMacro } from "@/components/views/escenarios-macro";
 
 /** Número crudo (betas): 1.29 → "1.29". null → "—". */
 function fmtNum(x: number | null): string {
@@ -47,6 +48,14 @@ export default async function FuentesPage() {
     unstable_rethrow(e);
     live = null;
   }
+  // Escenarios macro (abanico forward). null si el API aún no lo expone (sin redeploy) → sección oculta.
+  let forward: MacroForward | null = null;
+  try {
+    forward = await getFuentesForward();
+  } catch (e) {
+    unstable_rethrow(e);
+    forward = null;
+  }
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-9 sm:px-6 lg:px-8">
@@ -83,6 +92,15 @@ export default async function FuentesPage() {
       </section>
 
       {errMsg ? <ErrorPanel message={errMsg} /> : null}
+
+      {forward ? <EscenariosMacro data={forward} /> : null}
+
+      <div className="mt-8 mb-3">
+        <h2 className="text-sm font-semibold tracking-tight">Calibración del costo de capital (WACC)</h2>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          Los valores macro puntuales que usa el modelo, agrupados por fuente.
+        </p>
+      </div>
 
       <div className="space-y-5">
         {FUENTES.map((g) => (

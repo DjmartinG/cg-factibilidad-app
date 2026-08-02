@@ -17,6 +17,7 @@ _cache: dict[str, dict] = {}
 
 # Página oficial de la TRM (Banco de la República). El VALOR se lee en vivo del conector SDMX.
 URL_TRM = "https://www.banrep.gov.co/es/estadisticas/trm"
+URL_IBR = "https://www.banrep.gov.co/es/estadisticas/ibr"
 
 
 def _hoy() -> str:
@@ -84,3 +85,46 @@ def banrep_trm(*, fetch=banrep.fetch_serie) -> dict:
 
     _cache[clave] = payload
     return payload
+
+
+def banrep_ibr(*, fetch=banrep.fetch_serie) -> dict:
+    """IBR overnight (tasa de referencia) en vivo de Banrep, cacheado por día. Degrada a
+    `disponible=False` si Banrep no responde. Sirve para anclar la senda base de la tasa en el abanico."""
+    clave = f"ibr:{_hoy()}"
+    if clave in _cache:
+        return _cache[clave]
+
+    payload = {"disponible": False, "fuente": "Banco de la República", "url": URL_IBR}
+    try:
+        v = fetch("ibr")
+        if v is not None:
+            payload = {"disponible": True, "fuente": v.fuente, "url": URL_IBR,
+                       "valor": v.valor, "unidad": v.unidad, "periodo": (v.detalle or {}).get("periodo")}
+    except Exception:  # noqa: BLE001 — cualquier fallo de red/parseo → degrada a no-disponible
+        pass
+
+    _cache[clave] = payload
+    return payload
+
+
+def abanico_macro(*, anio: int | None = None) -> dict:
+    """Escenarios macro (abanico forward): ancla la senda BASE a los datos vivos de Banrep (TRM, IBR)
+    cuando están disponibles y delega la proyección al motor puro `macro_forward`. La inflación usa el
+    default grounded (meta Banrep). Robusto: si una fuente no responde, ese driver usa su default."""
+    import datetime as _dt
+
+    from aleph_engine import macro_forward as mf
+
+    anclas: dict[str, float] = {}
+    trm = banrep_trm()
+    if trm.get("disponible") and trm.get("valor"):
+        anclas["trm"] = float(trm["valor"])
+    ibr = banrep_ibr()
+    if ibr.get("disponible") and ibr.get("valor") is not None:
+        v = float(ibr["valor"])
+        anclas["tasa"] = v / 100.0 if v > 1 else v   # normaliza % (9.25) → ratio (0.0925)
+
+    anio = anio or _dt.date.today().year
+    r = mf.proyectar(anio_inicio=anio, anclas=anclas)
+    r["anclas_vivas"] = {"trm": trm, "ibr": ibr}     # procedencia para la UI (fuente + periodo)
+    return r
