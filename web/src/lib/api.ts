@@ -431,6 +431,10 @@ export interface DueDiligenceItem {
   item: string;
   estado: "ok" | "alerta" | "pendiente" | string;
   impacto: "alto" | "medio" | "bajo" | string;
+  /** Probabilidad de que el riesgo se materialice (eje Y de la matriz). "media" si no se calificó. */
+  probabilidad?: "alta" | "media" | "baja" | string;
+  /** Severidad = probabilidad × impacto (celda de la matriz de riesgos). */
+  severidad?: "alto" | "medio" | "bajo" | string;
   mitigacion: string;
   nota: string;
   del_analista: boolean;
@@ -438,6 +442,8 @@ export interface DueDiligenceItem {
 export interface DueDiligence {
   frentes: { clave: string; nombre: string }[];
   items: DueDiligenceItem[];
+  /** Conteo de riesgos ABIERTOS (estado != ok) por severidad. null si el API aún no lo expone. */
+  severidad_resumen?: { alto: number; medio: number; bajo: number } | null;
   veredicto: {
     nivel: "verde" | "ambar" | "rojo" | string;
     n_items: number;

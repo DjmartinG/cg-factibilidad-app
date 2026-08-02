@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import { Check, AlertTriangle, Circle, ShieldCheck, ShieldAlert, ShieldX, Pencil } from "lucide-react";
 import type { DueDiligence, DueDiligenceItem, Urbanismo, Mercado } from "@/lib/api";
@@ -33,6 +34,8 @@ export function ViabilidadView({
         </div>
       ) : null}
       <VeredictoBanner nivel={v.nivel} n_items={v.n_items} n_ok={v.n_ok} n_alertas={v.n_alertas} n_pendientes={v.n_pendientes} />
+
+      <RiskMatrix items={dd.items} resumen={dd.severidad_resumen} />
 
       <div className="grid gap-4 md:grid-cols-2">
         {dd.frentes.map((f) => {
@@ -141,6 +144,120 @@ function ImpactoChip({ impacto }: { impacto: string }) {
         ? "text-muted-foreground"
         : "text-muted-foreground/70";
   return <span className={cn("shrink-0 text-[0.7rem] tabular-nums", cls)}>impacto {impacto}</span>;
+}
+
+/* ── Matriz de riesgos (probabilidad × impacto) ─────────────────────────────────
+   Severidad = celda de la matriz; verde/ámbar/rojo son legítimos aquí (severidad ES un estado).
+   Solo se ubican los riesgos ABIERTOS (estado != ok): son los que exigen gestión. */
+const PROBS = ["alta", "media", "baja"] as const; // eje Y (arriba → abajo)
+const IMPS = ["bajo", "medio", "alto"] as const; // eje X (izq → der)
+const PESO_PROB: Record<string, number> = { alta: 3, media: 2, baja: 1 };
+const PESO_IMP: Record<string, number> = { alto: 3, medio: 2, bajo: 1 };
+
+function severidadDe(prob: string, imp: string): "alto" | "medio" | "bajo" {
+  const s = (PESO_PROB[prob] ?? 2) * (PESO_IMP[imp] ?? 2);
+  return s >= 6 ? "alto" : s >= 3 ? "medio" : "bajo";
+}
+
+const SEV_CELL: Record<string, string> = {
+  alto: "bg-danger/10 border-danger/25",
+  medio: "bg-cg-amber/12 border-cg-amber/25",
+  bajo: "bg-success/10 border-success/20",
+};
+const SEV_DOT: Record<string, string> = {
+  alto: "bg-danger text-[oklch(0.99_0.005_196)]",
+  medio: "bg-cg-amber text-[oklch(0.2_0.03_200)]",
+  bajo: "bg-success text-[oklch(0.99_0.005_196)]",
+};
+
+function RiskMatrix({ items, resumen }: { items: DueDiligenceItem[]; resumen?: { alto: number; medio: number; bajo: number } | null }) {
+  const orden: Record<string, number> = { alto: 0, medio: 1, bajo: 2 };
+  // Solo riesgos CALIFICADOS por el analista y abiertos: la plantilla sin revisar no puebla la matriz.
+  const abiertos = items
+    .filter((i) => i.estado !== "ok" && i.del_analista)
+    .sort((a, b) => (orden[a.severidad ?? "medio"] ?? 1) - (orden[b.severidad ?? "medio"] ?? 1));
+  if (abiertos.length === 0) return null;
+
+  // Numera cada riesgo (por severidad desc) para mapear el punto de la celda con la leyenda.
+  const num = new Map(abiertos.map((it, i) => [it, i + 1]));
+  const sev = resumen ?? { alto: 0, medio: 0, bajo: 0 };
+
+  return (
+    <div className="rounded-[var(--radius-data)] border bg-card p-4">
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <div className="text-sm font-medium text-foreground">Matriz de riesgos · probabilidad × impacto</div>
+        <div className="flex items-center gap-3 text-[0.7rem] text-muted-foreground">
+          <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-danger" />{sev.alto} alto</span>
+          <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-cg-amber" />{sev.medio} medio</span>
+          <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-success" />{sev.bajo} bajo</span>
+          <span className="tabular-nums">· {abiertos.length} abiertos</span>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <div className="flex gap-2">
+          {/* eje Y */}
+          <div className="flex flex-col justify-around pb-6 pr-1 text-[0.65rem] font-medium uppercase tracking-wide text-muted-foreground">
+            <span className="[writing-mode:vertical-rl] rotate-180 self-center py-2">Probabilidad</span>
+          </div>
+          <div className="min-w-[360px] flex-1">
+            <div className="grid grid-cols-[auto_repeat(3,1fr)] gap-1">
+              {PROBS.map((p) => (
+                <Fragment key={p}>
+                  <div className="flex w-9 items-center justify-end pr-1.5 text-[0.65rem] capitalize text-muted-foreground">{p}</div>
+                  {IMPS.map((im) => {
+                    const s = severidadDe(p, im);
+                    const enCelda = abiertos.filter((it) => (it.probabilidad ?? "media") === p && it.impacto === im);
+                    return (
+                      <div key={`${p}-${im}`} className={cn("relative flex min-h-[58px] flex-wrap content-start gap-1 rounded-[var(--radius-data)] border p-1.5", SEV_CELL[s])}>
+                        {enCelda.map((it) => (
+                          <span key={`${it.frente}-${it.item}`} className="group/dot relative">
+                            <span className={cn("flex size-5 cursor-default items-center justify-center rounded-full text-[0.6rem] font-bold tabular-nums shadow-[var(--shadow-card)]", SEV_DOT[s])}>
+                              {num.get(it)}
+                            </span>
+                            <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded-[var(--radius-data)] border bg-popover px-2 py-1 text-[0.7rem] text-popover-foreground shadow-[var(--shadow-card)] group-hover/dot:block">
+                              {it.item}
+                            </span>
+                          </span>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </Fragment>
+              ))}
+              {/* eje X */}
+              <div />
+              {IMPS.map((im) => (
+                <div key={im} className="pt-1 text-center text-[0.65rem] font-medium capitalize text-muted-foreground">{im}</div>
+              ))}
+            </div>
+            <div className="mt-1.5 text-center text-[0.65rem] font-medium uppercase tracking-wide text-muted-foreground">Impacto</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Leyenda numerada: los riesgos abiertos ordenados por severidad */}
+      <ol className="mt-4 space-y-1.5 border-t border-rule pt-3">
+        {abiertos.map((it) => (
+          <li key={`${it.frente}-${it.item}`} className="flex items-start gap-2.5 text-sm">
+            <span className={cn("mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-[0.6rem] font-bold tabular-nums", SEV_DOT[it.severidad ?? "medio"])}>
+              {num.get(it)}
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-baseline gap-x-2">
+                <span className="font-medium">{it.item}</span>
+                <span className="text-[0.7rem] tabular-nums text-muted-foreground">
+                  prob. {it.probabilidad ?? "media"} · impacto {it.impacto}
+                </span>
+              </div>
+              {it.mitigacion ? <div className="text-[0.72rem] text-muted-foreground">{it.mitigacion}</div> : null}
+            </div>
+            <EstadoBadge estado={it.estado} />
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
 }
 
 /** Cumplimiento urbanístico (POT) — índices calculados vs límites del POT (B2). */

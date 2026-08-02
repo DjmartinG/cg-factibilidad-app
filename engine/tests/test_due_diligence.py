@@ -15,8 +15,8 @@ def test_plantilla_sola_todo_pendiente_ambar():
     assert r["veredicto"]["n_pendientes"] == len(dd.PLANTILLA)
     # con pendientes pero sin alerta-alto → ámbar (due diligence en proceso)
     assert r["veredicto"]["nivel"] == "ambar"
-    # 5 frentes
-    assert [f["clave"] for f in r["frentes"]] == ["legal", "ambiental", "urbanistico", "tecnico", "bancario"]
+    # 6 frentes (incluye comercial / mercado)
+    assert [f["clave"] for f in r["frentes"]] == ["legal", "ambiental", "urbanistico", "tecnico", "comercial", "bancario"]
 
 
 def test_todo_ok_verde():
@@ -59,3 +59,42 @@ def test_normaliza_estado_e_impacto_invalidos():
     it = next(i for i in r["items"] if i["item"] == "Estudio de títulos y tradición")
     assert it["estado"] == "pendiente"        # estado inválido → pendiente
     assert it["impacto"] == "alto"            # impacto inválido → defecto de la plantilla
+
+
+def test_severidad_es_probabilidad_por_impacto():
+    # alta × alto = alto; baja × bajo = bajo; media × medio (default) = medio
+    reg = [
+        {"frente": "legal", "item": "Riesgo grande", "estado": "alerta", "probabilidad": "alta", "impacto": "alto"},
+        {"frente": "tecnico", "item": "Riesgo chico", "estado": "alerta", "probabilidad": "baja", "impacto": "bajo"},
+        {"frente": "legal", "item": "Riesgo medio", "estado": "alerta"},   # prob/imp por defecto = media/medio
+    ]
+    r = dd.evaluar({"due_diligence": reg})
+    by = {i["item"]: i for i in r["items"]}
+    assert by["Riesgo grande"]["severidad"] == "alto" and by["Riesgo grande"]["probabilidad"] == "alta"
+    assert by["Riesgo chico"]["severidad"] == "bajo"
+    assert by["Riesgo medio"]["probabilidad"] == "media" and by["Riesgo medio"]["severidad"] == "medio"
+
+
+def test_probabilidad_invalida_cae_a_media():
+    reg = [{"frente": "legal", "item": "Riesgo X", "estado": "alerta", "probabilidad": "quizas", "impacto": "alto"}]
+    r = dd.evaluar({"due_diligence": reg})
+    it = next(i for i in r["items"] if i["item"] == "Riesgo X")
+    assert it["probabilidad"] == "media"       # inválida → media
+    assert it["severidad"] == "alto"           # media × alto = 6 → alto
+
+
+def test_severidad_resumen_solo_cuenta_abiertos():
+    # toda la plantilla en 'ok' (no cuenta) y UN riesgo abierto alta×alto
+    reg = [{"frente": t["frente"], "item": t["item"], "estado": "ok"} for t in dd.PLANTILLA]
+    reg[0] = {**reg[0], "estado": "alerta", "probabilidad": "alta", "impacto": "alto"}
+    r = dd.evaluar({"due_diligence": reg})
+    # los 'ok' NO cuentan como riesgo abierto aunque su prob×impacto sea alto
+    assert r["severidad_resumen"]["alto"] == 1
+    assert sum(r["severidad_resumen"].values()) == 1   # solo el abierto calificado
+
+
+def test_resumen_ignora_plantilla_no_calificada():
+    # solo plantilla (todo pendiente, del_analista=False) → NO se cuenta en la matriz aunque el impacto sea alto
+    r = dd.evaluar({})
+    assert r["severidad_resumen"] == {"alto": 0, "medio": 0, "bajo": 0}
+    assert r["veredicto"]["n_pendientes"] == len(dd.PLANTILLA)   # sí quedan como pendientes en el checklist
