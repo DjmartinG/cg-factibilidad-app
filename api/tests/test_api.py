@@ -74,11 +74,13 @@ def test_project_y_results_fieles_al_motor():
     ci = res["cierre"]
     assert ci and ci["cuadre"]["ok"]
     assert ci["fuentes_total"] == pytest.approx(ci["usos_total"] + ci["utilidad_operativa"], rel=1e-6)
-    # Due diligence (B1): veredicto cualitativo + checklist de los 5 frentes.
+    # Due diligence (B1): veredicto cualitativo + checklist + matriz de riesgos (probabilidad × impacto).
     ddv = res["due_diligence"]
     assert ddv and ddv["veredicto"]["nivel"] in ("verde", "ambar", "rojo")
     assert ddv["veredicto"]["n_items"] >= 16
-    assert {f["clave"] for f in ddv["frentes"]} == {"legal", "ambiental", "urbanistico", "tecnico", "bancario"}
+    assert {f["clave"] for f in ddv["frentes"]} == {"legal", "ambiental", "urbanistico", "tecnico", "comercial", "bancario"}
+    assert set(ddv["severidad_resumen"]) == {"alto", "medio", "bajo"}   # matriz de riesgos (Fase 1)
+    assert all("probabilidad" in i and "severidad" in i for i in ddv["items"])
     # Viabilidad urbanística (B2): cumplimiento POT.
     urv = res["urbanismo"]
     assert urv and urv["veredicto"]["nivel"] in ("cumple", "al_limite", "excede", "sin_pot")
