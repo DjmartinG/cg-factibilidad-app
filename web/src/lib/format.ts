@@ -72,3 +72,22 @@ export function splitTir(tir: number | null | undefined, dec = 2): [string, stri
   if (tirEsDegenerada(tir)) return ["—", "greenfield"];
   return splitPct(tir, dec);
 }
+
+/**
+ * Motivo por el que una TIR de SOCIO/equity sale vacía. Distingue "greenfield" (el PROYECTO no tiene
+ * TIR) de "sin aporte" (el proyecto SÍ tiene TIR, pero el socio no aporta capital → no hay TIR de
+ * equity; su retorno es por honorarios, no por equity). Ej.: Argos, donde CG no aporta capital.
+ */
+export function tirSocioVacia(tirProyecto: number | null | undefined): string {
+  return tirEsDegenerada(tirProyecto) ? "greenfield" : "sin aporte";
+}
+
+/** TIR de socio para el KPI: número si existe; si no, distingue greenfield vs sin aporte de capital. */
+export function splitTirSocio(
+  tirSocio: number | null | undefined,
+  tirProyecto: number | null | undefined,
+  dec = 2,
+): [string, string] {
+  if (tirEsDegenerada(tirSocio)) return ["—", tirSocioVacia(tirProyecto)];
+  return splitPct(tirSocio, dec);
+}
