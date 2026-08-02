@@ -318,6 +318,14 @@ def get_fuentes_live():
     return {**fuentes_live.damodaran_colombia(), "trm": fuentes_live.banrep_trm()}
 
 
+@v1.get("/fuentes/forward")
+def get_fuentes_forward():
+    """Escenarios macro (abanico forward): inflación, tasa (IBR) y TRM proyectadas como cono de
+    incertidumbre. Senda base anclada a datos vivos de Banrep / meta oficial; bandas = escenarios del
+    comité [por validar]. Contexto de portafolio, NO alimenta el modelo. Degrada limpio si no hay red."""
+    return fuentes_live.abanico_macro()
+
+
 @v1.get("/macro/pendientes")
 def get_macro_pendientes(user: auth.Principal = Depends(auth.require_admin)):
     """Propuestas pendientes de aprobacion (admin)."""

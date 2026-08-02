@@ -643,6 +643,43 @@ export async function getFuentesLive(): Promise<FuentesLive | null> {
   return res.json() as Promise<FuentesLive>;
 }
 
+// ---------- Escenarios macro (abanico forward): cono de incertidumbre inflación/tasa/TRM ----------
+
+export interface MacroPunto {
+  anio: number;
+  base: number;
+  bajo: number;
+  alto: number;
+}
+export interface MacroVariable {
+  clave: "inflacion" | "tasa" | "trm" | string;
+  nombre: string;
+  unidad: "pct_ea" | "COP" | string;
+  fuente: string;
+  nota: string;
+  /** true si la base arranca del dato VIVO de Banrep (TRM/IBR); false si usa el default grounded. */
+  anclado: boolean;
+  puntos: MacroPunto[];
+}
+export interface MacroForward {
+  anio_inicio: number;
+  horizonte: number;
+  variables: MacroVariable[];
+  nota: string;
+  anclas_vivas?: {
+    trm?: { disponible?: boolean; valor?: number; periodo?: string | null } | null;
+    ibr?: { disponible?: boolean; valor?: number; periodo?: string | null } | null;
+  };
+}
+
+/** Escenarios macro (abanico forward). Degrada a `null` si el API aún no expone el endpoint (sin
+ *  redeploy) → la sección de escenarios simplemente no aparece. */
+export async function getFuentesForward(): Promise<MacroForward | null> {
+  const res = await apiFetch(`/v1/fuentes/forward`);
+  if (!res.ok) return null;
+  return res.json() as Promise<MacroForward>;
+}
+
 // ---------- Monte Carlo (POST run) ----------
 
 export interface MCStats {
