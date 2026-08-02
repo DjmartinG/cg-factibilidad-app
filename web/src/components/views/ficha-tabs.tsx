@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import type { ProjectDetail, Results, Sensitivity, Schedule, Wacc, Vehiculos } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { FichaResumen } from "@/components/views/ficha-resumen";
@@ -11,7 +11,7 @@ import { CronogramaView } from "@/components/views/ficha-cronograma";
 import { WaccView } from "@/components/views/ficha-wacc";
 import { SensibilidadView } from "@/components/views/ficha-sensibilidad";
 import { VehiculosView } from "@/components/views/ficha-vehiculos";
-import { PanelControl } from "@/components/views/panel-control";
+import { PanelControl, type SimBase } from "@/components/views/panel-control";
 
 type Tab = "resumen" | "cierre" | "viabilidad" | "flujo" | "cronograma" | "capital" | "sensibilidad" | "vehiculos" | "control";
 
@@ -45,6 +45,25 @@ export function FichaTabs({
   isAdmin?: boolean;
 }) {
   const [tab, setTab] = useState<Tab>("resumen");
+
+  // Valores base de los drivers del simulador, en unidades reales — desde lo que la ficha ya cargó.
+  const simBase: SimBase = useMemo(() => {
+    const und = schedule?.unidades_total ?? null;
+    const ventas = results.pyg?.ventas ?? null;
+    const directos = results.pyg?.directos ?? null;
+    const area = project.urbanistico?.area_construida ?? null;
+    const abs = schedule?.absorcion?.ventas ?? null;
+    let ritmo: number | null = null;
+    if (abs && abs.length) {
+      const act = abs.filter((v) => v > 0);
+      if (act.length) ritmo = act.reduce((a, b) => a + b, 0) / act.length;
+    }
+    return {
+      precio_und: und && ventas ? ventas / und : null,
+      costo_m2: area && directos ? directos / area : null,
+      ritmo_und_mes: ritmo,
+    };
+  }, [results, schedule, project]);
 
   return (
     <div>
@@ -133,7 +152,7 @@ export function FichaTabs({
           </div>
         )
       ) : null}
-      {tab === "control" ? <PanelControl slug={project.id} /> : null}
+      {tab === "control" ? <PanelControl slug={project.id} simBase={simBase} /> : null}
     </div>
   );
 }
