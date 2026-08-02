@@ -1,5 +1,5 @@
 import type { ProjectDetail, Pyg, Results, Urbanistico } from "@/lib/api";
-import { fmtCop, fmtInt, fmtPct, splitCop, splitPct, splitTir, tirEsDegenerada } from "@/lib/format";
+import { fmtCop, fmtInt, fmtPct, splitCop, splitPct, splitTir, splitTirSocio, tirEsDegenerada, tirSocioVacia } from "@/lib/format";
 import { StatPanel, type StatItem } from "@/components/stat";
 import { Figure } from "@/components/figure";
 import { ValorBanner } from "@/components/valor-banner";
@@ -19,9 +19,19 @@ function realTir(v: number | null | undefined): string {
   return v == null ? "— greenfield" : fmtPct(v);
 }
 
+/** TIR real del SOCIO; vacía → distingue greenfield vs sin aporte de capital (según la TIR del proyecto). */
+function realTirSocio(v: number | null | undefined, tirProyecto: number | null | undefined): string {
+  return v == null ? `— ${tirSocioVacia(tirProyecto)}` : fmtPct(v);
+}
+
 /** TIR (después de imp.); greenfield/degenerada → "— greenfield" (jamás −99%). */
 function tirAt(v: number | null | undefined): string {
   return v == null || tirEsDegenerada(v) ? "— greenfield" : fmtPct(v);
+}
+
+/** TIR del SOCIO (después de imp.); vacía → distingue greenfield vs sin aporte de capital. */
+function tirAtSocio(v: number | null | undefined, tirProyecto: number | null | undefined): string {
+  return v == null || tirEsDegenerada(v) ? `— ${tirSocioVacia(tirProyecto)}` : fmtPct(v);
 }
 
 export function FichaResumen({ project, results }: { project: ProjectDetail; results: Results }) {
@@ -32,7 +42,7 @@ export function FichaResumen({ project, results }: { project: ProjectDetail; res
 
   const stats: StatItem[] = [
     { label: tpL, parts: splitTir(ind.tir_proyecto), base: tpB || "desapalancada", emphasis: true },
-    { label: tsL, parts: splitTir(ind.tir_socio), base: tsB || "apalancada" },
+    { label: tsL, parts: splitTirSocio(ind.tir_socio, ind.tir_proyecto), base: tsB || "apalancada" },
     {
       label: ind.vpn_label || "VPN @TIO",
       parts: splitCop(ind.vpn_proyecto),
@@ -54,7 +64,7 @@ export function FichaResumen({ project, results }: { project: ProjectDetail; res
         <p className="mt-2 text-[0.7rem] text-muted-foreground">
           Precios constantes (real · deflactado por inflación {fmtPct(ind.inflacion)}):{" "}
           TIR proyecto <span className="num text-foreground/80">{realTir(ind.tir_proyecto_real)}</span> ·{" "}
-          TIR socio <span className="num text-foreground/80">{realTir(ind.tir_socio_real)}</span>
+          TIR socio <span className="num text-foreground/80">{realTirSocio(ind.tir_socio_real, ind.tir_proyecto)}</span>
         </p>
       ) : null}
 
@@ -70,7 +80,7 @@ export function FichaResumen({ project, results }: { project: ProjectDetail; res
           </div>
           <div className="grid gap-x-6 gap-y-1.5 sm:grid-cols-2 lg:grid-cols-4">
             <MiniStat label="TIR proyecto desp. imp." value={tirAt(ind.tir_proyecto_at)} note="modelo mensual" />
-            <MiniStat label="TIR socio desp. imp." value={tirAt(ind.tir_socio_at)} note="modelo mensual" />
+            <MiniStat label="TIR socio desp. imp." value={tirAtSocio(ind.tir_socio_at, ind.tir_proyecto)} note="modelo mensual" />
             {ind.iva_vis_devolucion ? (
               <MiniStat label="Devolución IVA VIS" value={`+${fmtCop(ind.iva_vis_devolucion)}`} note="3,8% · entrada" />
             ) : null}
