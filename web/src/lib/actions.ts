@@ -11,6 +11,7 @@ import {
   postMonteCarloCB,
   postRecalc,
   postGoalSeek,
+  postOpciones,
   setProjectReal,
   WriteError,
   type MonteCarloParams,
@@ -19,6 +20,8 @@ import {
   type MonteCarloCBResult,
   type Recalc,
   type GoalSeek,
+  type Opciones,
+  type EtapaMod,
 } from "@/lib/api";
 
 /**
@@ -57,6 +60,14 @@ export async function resolverMeta(
   meta: number,
 ): Promise<GoalSeek> {
   return postGoalSeek(slug, { objetivo, meta });
+}
+
+/** Server Action: opciones reales por etapa (retrasar/acelerar/quitar) → impacto en caja y retorno. */
+export async function evaluarOpciones(
+  slug: string,
+  mods: Record<string, EtapaMod>,
+): Promise<Opciones> {
+  return postOpciones(slug, mods);
 }
 
 // ---------- Escritura (Fase 5): crear + aprobar un proyecto ----------

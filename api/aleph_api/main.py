@@ -218,6 +218,15 @@ def post_recalc(scenario_id: str, req: dict | None = None):
     return _calc_o_422(build.recalc, par, req)
 
 
+@v1.post("/scenarios/{scenario_id}/opciones")
+def post_opciones(scenario_id: str, req: dict | None = None):
+    """Opciones reales por etapa: retrasar/acelerar/quitar cada etapa -> impacto en caja y retorno.
+    TIR/VPN direccionales (suelta fiducia); margen y caja exactos (la oficial es la de la ficha)."""
+    slug = _slug_de_escenario(scenario_id)
+    par, _R = _par_o_404(slug)
+    return _calc_o_422(build.opciones, par, req)
+
+
 # ---------- Escritura (Fase 2): crear/editar borradores → aprobar → baseline ----------
 # TODO write exige rol admin (`require_admin`); gerencia es solo-lectura. El `par` se valida con el
 # contrato del motor (write._validar) antes de persistir. NO toca el motor (cifras intactas).

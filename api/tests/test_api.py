@@ -533,3 +533,20 @@ def test_recalc_forward_sliders():
     assert "base" in j and "resultado" in j
     assert j["resultado"]["margen"] > j["base"]["margen"]          # +precio → +margen (exacto)
     assert {"tir_proyecto", "tir_equity", "vpn_proyecto", "margen"} <= j["resultado"].keys()
+
+
+@pytest.mark.skipif(NAV not in SLUGS, reason="Navarra no disponible")
+def test_opciones_fasing_por_etapa():
+    """Opciones reales: /opciones lista las etapas + base + resultado. Quitar una etapa no sube unidades."""
+    r = client.post(f"/v1/scenarios/{NAV}:base/opciones", json={"mods": {}})
+    assert r.status_code == 200
+    j = r.json()
+    assert j["etapas"] and all("cod" in e and "nombre" in e for e in j["etapas"])
+    base = j["base"]
+    assert base["indicadores"]["unidades"] > 0 and len(base["caja"]) > 0
+    assert base["caja"][0]["m"] == 0
+    # quitar la última etapa → no más unidades que la base (directo por etapa)
+    cod = j["etapas"][-1]["cod"]
+    r2 = client.post(f"/v1/scenarios/{NAV}:base/opciones", json={"mods": {str(cod): {"quitar": True}}})
+    assert r2.status_code == 200
+    assert r2.json()["resultado"]["indicadores"]["unidades"] <= base["indicadores"]["unidades"]
