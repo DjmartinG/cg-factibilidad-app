@@ -12,8 +12,9 @@ import { WaccView } from "@/components/views/ficha-wacc";
 import { SensibilidadView } from "@/components/views/ficha-sensibilidad";
 import { VehiculosView } from "@/components/views/ficha-vehiculos";
 import { PanelControl, type SimBase } from "@/components/views/panel-control";
+import { PanelOpciones } from "@/components/views/panel-opciones";
 
-type Tab = "resumen" | "cierre" | "viabilidad" | "flujo" | "cronograma" | "capital" | "sensibilidad" | "vehiculos" | "control";
+type Tab = "resumen" | "cierre" | "viabilidad" | "flujo" | "cronograma" | "capital" | "sensibilidad" | "vehiculos" | "control" | "opciones";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "resumen", label: "Resumen" },
@@ -25,6 +26,7 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "sensibilidad", label: "Sensibilidad" },
   { key: "vehiculos", label: "Vehículos" },
   { key: "control", label: "Simulador" },
+  { key: "opciones", label: "Etapas" },
 ];
 
 export function FichaTabs({
@@ -153,6 +155,7 @@ export function FichaTabs({
         )
       ) : null}
       {tab === "control" ? <PanelControl slug={project.id} simBase={simBase} /> : null}
+      {tab === "opciones" ? <PanelOpciones slug={project.id} /> : null}
     </div>
   );
 }

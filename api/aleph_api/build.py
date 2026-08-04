@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 
 from aleph_engine import calcular, checks, cierre, config, due_diligence, finanzas, goal_seek as gs, mercado, metrics, modelo, portfolio, simulacion, tributario, urbanismo
+from aleph_engine import opciones as _opciones
 
 from . import repo
 
@@ -437,5 +438,23 @@ def recalc(par: dict, req: dict) -> dict:
         "base": base,
         "resultado": res,
         "nota": "Simulacion en base mensual: el margen es exacto; TIR/VPN son DIRECCIONALES "
+                "(la oficial es la auditada de la ficha).",
+    }
+
+
+def opciones(par: dict, req: dict) -> dict:
+    """Escenarios de FASING por etapa (opciones reales): retrasar / acelerar (ritmo) / quitar cada etapa.
+    `req` = {mods: {cod: {delay:int, ritmo_factor:float, quitar:bool}}}. Devuelve las etapas (para pintar
+    los controles) + base + resultado. Como el simulador, TIR/VPN son DIRECCIONALES (suelta el override
+    de fiducia); el margen y la caja (exposicion, credito, timeline) son EXACTOS."""
+    req = req or {}
+    mods = req.get("mods") or {}
+    base_date = min((e.get("fecha_inicio") for e in par.get("etapas", []) if e.get("fecha_inicio")), default=None)
+    return {
+        "etapas": _opciones.etapas_info(par),
+        "base": _opciones.correr_escenario(par, {}),
+        "resultado": _opciones.correr_escenario(par, mods),
+        "base_date": base_date,
+        "nota": "Fasing por etapa: el margen y la caja son exactos; TIR/VPN son DIRECCIONALES "
                 "(la oficial es la auditada de la ficha).",
     }

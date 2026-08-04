@@ -1025,3 +1025,57 @@ export async function postGoalSeek(
   if (!res.ok) throw new Error(`API ${res.status} en goal-seek de ${slug}`);
   return res.json() as Promise<GoalSeek>;
 }
+
+// ---------- Opciones reales por etapa (fasing: retrasar / acelerar / quitar) ----------
+
+export interface OpcionEtapa {
+  cod: number | string;
+  nombre: string;
+  und: number;
+  fecha_inicio?: string | null;
+  vmes?: number | null;
+}
+export interface OpcionesInd {
+  tir: number | null;
+  vpn: number | null;
+  margen: number | null;
+  exposicion_maxima: number | null;
+  credito_max: number | null;
+  payback_mes: number | null;
+  valor_creado: number | null;
+  crea_valor: boolean | null;
+  unidades: number;
+}
+export interface OpcionesCaja {
+  m: number;
+  acum: number;
+  credito: number;
+}
+export interface OpcionesEscenario {
+  indicadores: OpcionesInd;
+  caja: OpcionesCaja[];
+  inicio_offset: number;
+  vacio?: boolean;
+}
+export interface Opciones {
+  etapas: OpcionEtapa[];
+  base: OpcionesEscenario;
+  resultado: OpcionesEscenario;
+  base_date: string | null;
+  nota: string;
+}
+/** Modificaciones por etapa: retrasar (meses), ritmo (×factor), quitar (excluir). */
+export type EtapaMod = { delay?: number; ritmo_factor?: number; quitar?: boolean };
+
+export async function postOpciones(
+  slug: string,
+  mods: Record<string, EtapaMod>,
+): Promise<Opciones> {
+  const res = await apiFetch(`/v1/scenarios/${encodeURIComponent(slug)}:base/opciones`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ mods }),
+  });
+  if (!res.ok) throw new Error(`API ${res.status} en opciones de ${slug}`);
+  return res.json() as Promise<Opciones>;
+}
