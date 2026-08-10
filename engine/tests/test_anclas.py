@@ -68,10 +68,15 @@ def _assert_cifras(got, exp):
 # (beta_d/rp) NO toca tir_equity; estos valores == los snapshots commiteados. Navarra REAL (fiducia
 # override 41,72%) no cambia.
 AUDITADAS = {
+    # Navarra: re-baseline 2026-08-09 (docs/acta_rebaseline_navarra_20260809.md, aprobado por Martín).
+    # Recalibración contra el Excel de factibilidad: el local comercial pasa de "otros ingresos" a
+    # VENTAS (+1,374%), el recaudo usa la cuota inicial y la separación reales, y las cubetas de
+    # honorarios suman el 10% del total. Las TRES cifras de decisión NO se movieron (salen del override
+    # `fiducia`): tir_proyecto 37,5975% · vpn_proyecto 18.280.688 · tir_equity 41,7189%.
     "proyectos_privados/1_navarra_REAL.json": {
-        "util_oper": 11362332.97, "margen_oper": 0.04947, "ventas": 229682047.11,
+        "util_oper": 11362333.12, "margen_oper": 0.048799, "ventas": 232838874.45,
         "ap_tir_proyecto": 0.375975, "ap_vpn_proyecto": 18280687.67, "ap_tir_equity": 0.417189,
-        "ap_credito_max": 49292016.2, "ap_fiducia_real": True, "fl_tir_proyecto": -0.00329,
+        "ap_credito_max": 48623715.5, "ap_fiducia_real": True, "fl_tir_proyecto": 0.01585,
     },
     "proyectos_privados/2_dominica_REAL.json": {
         "util_oper": 11250275.94, "margen_oper": 0.086214, "ventas": 130492117.68,
