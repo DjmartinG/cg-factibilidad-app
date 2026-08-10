@@ -131,14 +131,18 @@ def test_fiducia_waterfall_intacto_override():
 # flujo_equity (reincorpora honorarios+util_lote al socio) llevó la TIR socio mensual de −3,3%/−6,1%
 # (absurda) a +14,4%/+11,4% (plausible). La carga de la SAS (opaca) sube: sus dividendos dependen del
 # equity distribuido. La fiducia OFICIAL (auditada, 41,72%) NO cambia (usa el FCL override).
+# Re-baseline 2026-08-09 (docs/acta_rebaseline_navarra_20260809.md, aprobado por Martín). Las cifras
+# after-tax bajan porque el par ahora declara `iva_en_operativo`: la devolución del IVA VIS ya viaja
+# como ingreso operativo y la capa after-tax deja de sumarla otra vez (antes se doble-contaba). La
+# cifra OFICIAL pre-impuesto (tir_proyecto_auditada 37,5975%) NO se movió.
 _GOLDEN_NAVARRA = {
-    "fiducia":                  {"tir_socio_at": 0.143556, "carga": 9434326.135},
-    "encargo_fiduciario":       {"tir_socio_at": 0.143556, "carga": 13411142.675},
-    "consorcio":                {"tir_socio_at": 0.143556, "carga": 13411142.675},
-    "union_temporal":           {"tir_socio_at": 0.143556, "carga": 13411142.675},
-    "cuentas_en_participacion": {"tir_socio_at": 0.143556, "carga": 13411142.675},
-    "sas_spv":                  {"tir_socio_at": 0.113699, "carga": 20922139.588},
-    "fcp":                      {"tir_socio_at": 0.143556, "carga": 13411142.675},
+    "fiducia":                  {"tir_socio_at": 0.111089, "carga": 9638511.155},
+    "encargo_fiduciario":       {"tir_socio_at": 0.111089, "carga": 13615327.746},
+    "consorcio":                {"tir_socio_at": 0.111089, "carga": 13615327.746},
+    "union_temporal":           {"tir_socio_at": 0.111089, "carga": 13615327.746},
+    "cuentas_en_participacion": {"tir_socio_at": 0.111089, "carga": 13615327.746},
+    "sas_spv":                  {"tir_socio_at": 0.081675, "carga": 23743740.4},
+    "fcp":                      {"tir_socio_at": 0.111089, "carga": 13615327.746},
 }
 
 

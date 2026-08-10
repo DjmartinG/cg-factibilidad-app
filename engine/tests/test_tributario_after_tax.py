@@ -61,10 +61,20 @@ def test_aditivo_no_mueve_dorado_y_expone_at():
     if not os.path.exists(_PRIV):
         pytest.skip("Navarra REAL no disponible (CI sin datos privados)")
     from aleph_engine import calcular
-    ap = calcular(json.load(open(_PRIV, encoding="utf-8")))["apalancamiento"]
+    par = json.load(open(_PRIV, encoding="utf-8"))
+    R = calcular(json.loads(json.dumps(par)))
+    ap, pg = R["apalancamiento"], R["pyg"]
     # pre-impuesto INTACTO (dorado)
     assert abs(ap["tir_proyecto"] - 0.375975) < 1e-4
     # campos after-tax presentes y coherentes
     for k in ("tir_proyecto_at", "tir_equity_at", "vpn_at", "iva_vis_devolucion", "carga_tributaria_neta_at"):
         assert k in ap
-    assert ap["iva_vis_devolucion"] > 0          # Navarra es VIS → hay devolución
+    # Navarra es VIS → hay devolución de IVA. Desde el re-baseline 2026-08-09 el par declara
+    # `iva_en_operativo`: el Excel la registra como INGRESO OPERATIVO (viaja dentro de recon_codensa),
+    # así que la capa after-tax NO la vuelve a sumar y el campo queda en 0 A PROPÓSITO. Sin el flag se
+    # doble-contaba. Ver docs/acta_rebaseline_navarra_20260809.md §5.3.
+    if par["financiero"].get("iva_en_operativo"):
+        assert ap["iva_vis_devolucion"] == 0
+        assert pg["recon_codensa"] > 0           # la devolución sigue ahí, en el operativo
+    else:
+        assert ap["iva_vis_devolucion"] > 0
